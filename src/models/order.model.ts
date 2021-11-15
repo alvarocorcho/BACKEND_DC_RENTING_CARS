@@ -1,4 +1,4 @@
-import {Entity, model, property, belongsTo, hasOne} from '@loopback/repository';
+import {belongsTo, Entity, hasOne, model, property} from '@loopback/repository';
 import {Usuario} from './usuario.model';
 import {Vehiculo} from './vehiculo.model';
 
@@ -10,6 +10,12 @@ export class Order extends Entity {
     generated: true,
   })
   id?: string;
+
+  @property({
+    type: 'string',
+    required:true,
+  })
+  vehiculoId?: string;
 
   @property({
     type: 'date',

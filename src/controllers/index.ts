@@ -2,7 +2,7 @@ export * from './ping.controller';
 export * from './usuario-rol.controller';
 export * from './usuario-order.controller';
 export * from './order-usuario.controller';
-export * from './vehiculo-order.controller';
+/*export * from './vehiculo-order.controller';*/
 export * from './rol-usuario.controller';
 export * from './usuario-rol.controller';
 export * from './order-usuario.controller';

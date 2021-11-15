@@ -15,6 +15,12 @@ export class Usuario extends Entity {
     type: 'string',
     required: true,
   })
+  rolId?: string;
+
+  @property({
+    type: 'string',
+    required: true,
+  })
   tipoDocumento: string;
 
   @property({
