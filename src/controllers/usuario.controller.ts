@@ -9,10 +9,11 @@ import {
 } from '@loopback/repository';
 import {
   del, get,
-  getModelSchemaRef, param, patch, post, put, requestBody,
+  getModelSchemaRef, HttpErrors, param, patch, post, put, requestBody,
   response
 } from '@loopback/rest';
-import {Usuario} from '../models';
+import {Llaves} from '../config/llaves';
+import {Credenciales, Usuario} from '../models';
 import {UsuarioRepository} from '../repositories';
 import {AutenticacionService} from '../services';
 /*import fetch from 'node-fetch';*/
@@ -25,6 +26,33 @@ export class UsuarioController {
     @service(AutenticacionService)
     public servicioAutenticacion: AutenticacionService
   ) {}
+
+@post("/identificarUsuario", {
+  responses:{
+    '200':{
+      description: "Identificacion de Usuarios"
+    }
+  }
+})
+async identificarUsuario(
+  @requestBody() credenciales: Credenciales
+){
+  let u = await this.servicioAutenticacion.IdentificarUsuario(credenciales.usuario, credenciales.clave);
+  if(u){
+      let token = this.servicioAutenticacion.GenerarTokenJWT(u);
+      return{
+        datos:{
+          nombre: u.nombres,
+          correo: u.email,
+          id: u.id,
+          rol: u.rolId
+        },
+        tk: token
+      }
+  } else {
+    throw new HttpErrors[401]("DATOS NO VALIDOS - ACCESO DENEGAGO");
+  }
+}
 
   @post('/usuarios')
   @response(200, {
@@ -54,7 +82,7 @@ export class UsuarioController {
     let destino = usuario.email;
     let asunto = 'REGISTRO EN LA PLATAFORMA DE DC RENTING CARS'
     let contenido = `Hola ${usuario.nombres}, su usuario es: ${usuario.email} y su contraseña es: ${clave}`;
-    fetch(`http://127.0.0.1:5000/envio_correo?correo_destino=${destino}&asunto=${asunto}&contenido=${contenido}`)
+    fetch(`${Llaves.urlServicioNotificaciones}/envio_correo?correo_destino=${destino}&asunto=${asunto}&contenido=${contenido}`)
     .then((data: any) => {
       console.log(data);
     })
