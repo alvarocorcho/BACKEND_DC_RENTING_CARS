@@ -1,3 +1,4 @@
+import {authenticate} from '@loopback/authentication';
 import {
   Count,
   CountSchema,
@@ -25,6 +26,8 @@ export class VehiculoController {
     @repository(VehiculoRepository)
     public vehiculoRepository : VehiculoRepository,
   ) {}
+
+  @authenticate("admin")
 
   @post('/vehiculos')
   @response(200, {

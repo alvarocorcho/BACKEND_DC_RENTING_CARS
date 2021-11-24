@@ -189,4 +189,35 @@ async identificarUsuario(
   async deleteById(@param.path.string('id') id: string): Promise<void> {
     await this.usuarioRepository.deleteById(id);
   }
+
+  @post("/recuperarClave", {
+    responses:{
+      '200':{
+        description: "Recuperar Clave Usuarios"
+      }
+    }
+  })
+  async recuperarClave(
+    @requestBody() email: string
+  ): Promise<Boolean> {
+    let usuario = await
+  }
+
+  {
+    let u = await this.servicioAutenticacion.IdentificarUsuario(credenciales.usuario, credenciales.clave);
+    if(u){
+        let token = this.servicioAutenticacion.GenerarTokenJWT(u);
+        return{
+          datos:{
+            nombre: u.nombres,
+            correo: u.email,
+            id: u.id,
+            rol: u.rolId
+          },
+          tk: token
+        }
+    } else {
+      throw new HttpErrors[401]("DATOS NO VALIDOS - ACCESO DENEGAGO");
+    }
+  }
 }
