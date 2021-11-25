@@ -13,7 +13,7 @@ import {
   response
 } from '@loopback/rest';
 import {Llaves} from '../config/llaves';
-import {Credenciales, Usuario} from '../models';
+import {Credenciales, CredencialesCambioPassword, RecuperarClave, Usuario} from '../models';
 import {UsuarioRepository} from '../repositories';
 import {AutenticacionService} from '../services';
 /*import fetch from 'node-fetch';*/
@@ -189,35 +189,75 @@ async identificarUsuario(
   async deleteById(@param.path.string('id') id: string): Promise<void> {
     await this.usuarioRepository.deleteById(id);
   }
-
-  @post("/recuperarClave", {
+//RECORDAR O RECUPERAR CONTRASEÑA USUARIO
+  @post("/recordarClave", {
     responses:{
       '200':{
-        description: "Recuperar Clave Usuarios"
+        description: "Recordar Clave Usuarios"
       }
     }
   })
-  async recuperarClave(
-    @requestBody() email: string
+  async recordarClave(
+    @requestBody() credenciales: RecuperarClave
   ): Promise<Boolean> {
-    let usuario = await
-  }
+    let usuario = await this.usuarioRepository.findOne({
+      where: {
+        email: credenciales.correo
+      }
+    });
+    if (usuario){
+      //GENERAR Y CIFRAR CLAVE
+      let clave = this.servicioAutenticacion.GenerarClave();
+      console.log(clave)
+      let claveCifrada = this.servicioAutenticacion.cifrarClave(clave);
+      console.log(claveCifrada)
+      usuario.password = claveCifrada;
+      await this.usuarioRepository.updateById(usuario.id, usuario);
 
-  {
-    let u = await this.servicioAutenticacion.IdentificarUsuario(credenciales.usuario, credenciales.clave);
-    if(u){
-        let token = this.servicioAutenticacion.GenerarTokenJWT(u);
-        return{
-          datos:{
-            nombre: u.nombres,
-            correo: u.email,
-            id: u.id,
-            rol: u.rolId
-          },
-          tk: token
-        }
+      //ENVIAR NOTIFICACION
+      let destino = usuario.email;
+      let asunto = 'RECUPERACION CLAVE PLATAFORMA DE DC RENTING CARS'
+      let contenido = `Hola ${usuario.nombres}, la solicitud de recuperacion de contraseña ha sido procesada, su usuario es: ${usuario.email} y su contraseña es: ${clave}`;
+      fetch(`${Llaves.urlServicioNotificaciones}/envio_correo?correo_destino=${destino}&asunto=${asunto}&contenido=${contenido}`)
+      return true;
     } else {
-      throw new HttpErrors[401]("DATOS NO VALIDOS - ACCESO DENEGAGO");
+    return false;
     }
   }
+
+//CAMBIO DE CLAVE POR PARTE DEL USUARIO
+  @post("/cambiarClave", {
+    responses:{
+      '200':{
+        description: "Cambiar Clave Usuarios"
+      }
+    }
+  })
+  async cambiarClave(
+    @requestBody() datos: CredencialesCambioPassword
+  ): Promise<Boolean> {
+    let claveantCifrada = this.servicioAutenticacion.cifrarClave(datos.claveactual);
+    let usuario = await this.usuarioRepository.findById(datos.id);
+    if (usuario) {
+      if (usuario.password == claveantCifrada){
+        usuario.password = datos.nuevaclave;
+        let claveCifrada = this.servicioAutenticacion.cifrarClave(usuario.password);
+        console.log(claveCifrada)
+        console.log(datos.nuevaclave)
+        usuario.password = claveCifrada;
+        await this.usuarioRepository.updateById(datos.id, usuario);
+//NOTIFICAR AL USUARIO EL CAMBIO DE CONTRASEÑA
+        let destino = usuario.email;
+        let asunto = 'CAMBIO CLAVE PLATAFORMA DE DC RENTING CARS'
+        let contenido = `Hola ${usuario.nombres}, la solicitud de cambio de contraseña ha sido procesada, su usuario es: ${usuario.email} y su contraseña es: ${datos.nuevaclave}`;
+        fetch(`${Llaves.urlServicioNotificaciones}/envio_correo?correo_destino=${destino}&asunto=${asunto}&contenido=${contenido}`)
+        return true;
+      } else {
+        return false;
+      }
+    }
+    return false;
+  }
+
+
 }
